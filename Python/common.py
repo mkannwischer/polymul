@@ -19,6 +19,14 @@ def isPrime(n):
     return True
 
 def primitiveRootOfUnity(n, q):
+        """
+            returns a primitive n-th root of unity mod q if it exists, i.e.,
+            returns w, s.t. w^n = 1 mod q and w^k != 1 mod q for all k < n.
+            Raises an error if it does not exist.
+
+
+        """
+
     for i in range(2,q):
         if pow(i, n, q) == 1:
             # i is an n-th root of unity, but it may not be primitive
@@ -32,10 +40,15 @@ def primitiveRootOfUnity(n, q):
                 return i
     raise Exception(f"{n}th root of unity mod {q} does not exist")
 
-
-# TODO: document each function
-
 def bitreverse(a):
+        """
+            Transforms an array a into bitreversed order.
+            a needs to have length 2^k for some k
+            For example
+            [0,1,2,3,4,5,6,7] will be turned into [0,4,2,6,1,5,3,7]
+
+        """
+
     b = [0]*len(a)
     logn =  int(math.log(len(a), 2))
     assert 2**logn == len(a)
@@ -52,6 +65,15 @@ def bitreverse(a):
 
 
 def reverseBaseN(a, base):
+        """
+            Transforms an array into reversed order for any base.
+            For base=2, this is the same as bitreverse.
+            a needs to have length base^k for some k.
+            For example
+            [0,1,2,3,4,5,6,7,8] for base=3 will be turned into [0,3,6,1,4,7,2,5,8]
+
+        """
+
     b = [0]*len(a)
     logn =  int(math.log(len(a), base))
     assert base**logn == len(a)
@@ -72,6 +94,13 @@ def reverseBaseN(a, base):
 
 
 def ntt_naive_cyclic(p, root):
+        """
+            Naive implementation of a cyclic NTT. Needs an n-th root of unity.
+            Computes
+            antt_i = sum_j=0^n (a_j  root^(ij)) for 0 <= i < n
+
+        """
+    
     q = p.q
     pntt = Poly.zero(p.n, q)
     for i in range(p.n):
@@ -79,8 +108,14 @@ def ntt_naive_cyclic(p, root):
             pntt.coeffs[i] = (pntt.coeffs[i] +  p.coeffs[j]*pow(root, i*j, q)) % q
     return pntt
 
-# TODO: describe what it is computing
 def invntt_naive_cyclic(pntt, root):
+        """
+            Naive implementation of an inverse cyclic NTT. Needs an n-th root of unity.
+            Computes
+            a_i = 1/n * sum_j=0^n (a_j  root^(-ij)) for 0 <= i < n
+
+        """
+
     q = pntt.q
     p = Poly.zero(pntt.n, q)
     for i in range(pntt.n):
@@ -92,6 +127,12 @@ def invntt_naive_cyclic(pntt, root):
     return p
 
 def ntt_naive_negacyclic(p, root):
+        """
+            Naive implementation of a negacyclic NTT. Needs a 2n-th root of unity.
+            Computes
+            antt_i = sum_j=0^n (a_j  root^(2ij + j)) for 0 <= i < n
+
+        """
     q = p.q
     pntt = Poly.zero(p.n, q)
     for i in range(p.n):
@@ -100,6 +141,12 @@ def ntt_naive_negacyclic(p, root):
     return pntt
 
 def invntt_naive_negacyclic(pntt, root):
+        """
+            Naive implementation of an inverse negacyclic NTT. Needs a 2n-th root of unity.
+            Computes
+            a_i = 1/n * root^(-i) * sum_j=0^n (a_j  root^(-2ij)) for 0 <= i < n
+
+        """
     q = pntt.q
     p = Poly.zero(pntt.n, q)
     for i in range(pntt.n):
