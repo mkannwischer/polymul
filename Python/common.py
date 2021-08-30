@@ -2,40 +2,7 @@ import math
 from poly import Poly
 from numpy import base_repr
 
-# TODO: document each function
-def bitrevidx(a, nbits):
-    fmt = f"{{0:0{nbits}b}}"
-    return list(map(lambda x: int(fmt.format(x)[::-1],2), a))
 
-def bitreverse(a):
-    b = [0]*len(a)
-    logn =  int(math.log(len(a), 2))
-    assert 2**logn == len(a)
-
-    brv = bitrevidx(list(range(len(a))), logn)
-
-    for i in range(len(a)):
-        b[brv[i]] = a[i]
-    return b
-
-def revIdxBaseN(idx, ndigits, base):
-    # represent as number in base N
-    rep = base_repr(idx, base)
-    # pad with zeros
-    rep = "0"*(ndigits-len(rep))+ rep
-    # reverse
-    rep = rep[::-1]
-    return int(rep, base)
-
-
-def reverseBaseN(a, base):
-    b = [0]*len(a)
-    logn =  int(math.log(len(a), base))
-    assert base**logn == len(a)
-
-    for i in range(len(a)):
-        b[revIdxBaseN(i, logn, base)] = a[i]
-    return b
 
 def isPrime(n):
     """
@@ -51,7 +18,6 @@ def isPrime(n):
             return False
     return True
 
-
 def primitiveRootOfUnity(n, q):
     for i in range(2,q):
         if pow(i, n, q) == 1:
@@ -65,6 +31,45 @@ def primitiveRootOfUnity(n, q):
             if isPrimitive:
                 return i
     raise Exception(f"{n}th root of unity mod {q} does not exist")
+
+
+# TODO: document each function
+
+def bitreverse(a):
+    b = [0]*len(a)
+    logn =  int(math.log(len(a), 2))
+    assert 2**logn == len(a)
+
+    def bitrevidx(a, nbits):
+        fmt = f"{{0:0{nbits}b}}"
+        return list(map(lambda x: int(fmt.format(x)[::-1],2), a))
+
+    brv = bitrevidx(list(range(len(a))), logn)
+
+    for i in range(len(a)):
+        b[brv[i]] = a[i]
+    return b
+
+
+def reverseBaseN(a, base):
+    b = [0]*len(a)
+    logn =  int(math.log(len(a), base))
+    assert base**logn == len(a)
+
+    def revIdxBaseN(idx, ndigits, base):
+    # represent as number in base N
+        rep = base_repr(idx, base)
+        # pad with zeros
+        rep = "0"*(ndigits-len(rep))+ rep
+        # reverse
+        rep = rep[::-1]
+        return int(rep, base)
+
+    for i in range(len(a)):
+        b[revIdxBaseN(i, logn, base)] = a[i]
+    return b
+
+
 
 def ntt_naive_cyclic(p, root):
     q = p.q

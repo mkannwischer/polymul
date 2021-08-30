@@ -16,6 +16,8 @@ class Poly:
         number of coefficients (degree+1)
     coeffs : int[]
         the cofficients of the polynomial, with coeffs[i] corresponding to x^i
+    q : int
+        modulus. Optional.
     """
 
     def __init__(self, coeffs, q=None):
@@ -32,7 +34,7 @@ class Poly:
     def __mul__(self, other):
         """
         multiplies two polynomials and returns a double-sized product.
-        Does not apply any modular reductions
+        Does not apply any modular reductions mod q
 
         """
         if isinstance(other, Poly):
@@ -86,7 +88,26 @@ class Poly:
         c.reduce()
         return c
 
+    def __rshift__(self, shift):
+        self.reduce()
+        c = Poly.zero(self.n, self.q)
+        for i in range(self.n):
+            c.coeffs[i] = self.coeffs[i]>>shift
+        return c
+
+
     def pointwise(self, other):
+        def reduce(self):
+        """
+        Performs a coefficient-wise multiplication followed by a reduction
+        modulo q.
+
+        Parameters
+        ----------
+        other: Poly
+               The other polynomial
+
+        """
         assert self.q == other.q
         assert self.n == other.n
         c = Poly.zero(self.n, self.q)
@@ -95,14 +116,12 @@ class Poly:
         c.reduce()
         return c
 
-    def __rshift__(self, shift):
-        self.reduce()
-        c = Poly.zero(self.n, self.q)
-        for i in range(self.n):
-            c.coeffs[i] = self.coeffs[i]>>shift
-        return c
 
     def reduce(self):
+        """
+        Reduces a polynomial mod q, i.e., [0,q)
+
+        """
         if self.q:
             for i in range(len(self.coeffs)):
                 self.coeffs[i] %= self.q
