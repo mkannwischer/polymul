@@ -1,28 +1,43 @@
 #!/usr/bin/env python3
+"""Section 2.2.2: Karatsuba.
+
+Illustrates (refined) two-way Karatsuba multiplication.
+"""
+
 from poly import Poly
 import sys
 
 def polymul_karatsuba(a, b):
-    """
-        This computes a polynomial product using two-way Karatsuba.
-        Assumes n is the same for both a and b.
-        Works for odd n.
+    """Compute polynomial product using two-way Karatsuba.
 
-        Smaller polynomial multiplications are implemented using schoolbook.
-        For example, for n=4:
-        Let c = a0b0; d = (a0+a1)(b0+b1); e = a1b1;
+    Assumes n is the same for both a and b.
+    Works for odd n.
 
-        We compute:
-          0    1    2    3    4    5    6
-         ---- ---- ----      ---- ---- ----
-        | c0 | c1 | c2 |    | e0 | e1 | e2 |
-         ---- ---- ---- ---- ---- ----  ----
-                + | d0 | d1 | d2 |
-                   ---- ---- ----
-                - | c0 | c1 | c2 |
-                   ---- ---- ----
-                - | e0 | e1 | e2 |
-                   ---- ---- ----
+    Smaller polynomial multiplications are implemented using schoolbook.
+    For example, for n=4:
+    Let c = a0b0; d = (a0+a1)(b0+b1); e = a1b1;
+
+    We compute:
+      0    1    2    3    4    5    6
+     ---- ---- ----      ---- ---- ----
+    | c0 | c1 | c2 |    | e0 | e1 | e2 |
+     ---- ---- ---- ---- ---- ----  ----
+            + | d0 | d1 | d2 |
+               ---- ---- ----
+            - | c0 | c1 | c2 |
+               ---- ---- ----
+            - | e0 | e1 | e2 |
+               ---- ---- ----
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand with n coefficients.
+    b : Poly
+        second multiplicand with n coefficients.
+    Returns
+    ----------
+    Poly
+        product a*b with 2n-1 coefficients.
     """
     assert a.n == b.n
     assert a.q == b.q
@@ -69,11 +84,23 @@ def polymul_karatsuba(a, b):
     return c
 
 def polymul_karatsuba_recursive(a, b, threshold):
-    """
-        Similar as polymul_karatsuba, but the smaller polynomial multiplications
-        are also using karatsuba down to a threadhold from which we switch to
-        schoolbook.
-        Assumes n is the same for both a and b.
+    """Compute polynomial product using recursive two-way Karatsuba down to a threshold.
+
+    Similar as polymul_karatsuba, but the smaller polynomial multiplications
+    are also using karatsuba down to a threashold from which we switch to
+    schoolbook.
+    Assumes n is the same for both a and b.
+
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand with n coefficients.
+    b : Poly
+        second multiplicand with n coefficients.
+    Returns
+    ----------
+    Poly
+        product a*b with 2n-1 coefficients.
     """
     assert a.n == b.n
     assert a.q == b.q
@@ -124,38 +151,49 @@ def polymul_karatsuba_recursive(a, b, threshold):
     return c
 
 def polymul_refined_karatsuba(a, b):
-    """
-        The core observation of refined Karatsuba is that some additions are performed twice.
-        Consider the example with n =4.
-        Let c = a0b0; d = (a0+a1)(b0+b1); e = a1b1;
+    """Compute polynomial product using refined two-way Karatsuba.
 
-        Normal Karatsuba computes:
-          0    1    2    3    4    5    6
-         ---- ---- ----      ---- ---- ----
-        | c0 | c1 | c2 |    | e0 | e1 | e2 |
-         ---- ---- ---- ---- ---- ----  ----
-                + | d0 | d1 | d2 |
-                   ---- ---- ----
-                - | c0 | c1 | c2 |
-                   ---- ---- ----
-                - | e0 | e1 | e2 |
-                   ---- ---- ----
-        Here c2-e0 is computed twice (in column 2 and 4).
-        For larger polynomials, this duplicate computation becomes significant (n//2-1)
-        We can, thus, compute that part (say h) once and save some additions.
-        Consequently, refined Karatsuba looks like
-          0    1    2    3    4    5    6
-         ---- ---- ----      ---- ---- ----
-        | c0 | c1 | h0 |    |-h0 | e1 | e2 |
-         ---- ---- ---- ---- ---- ----  ----
-                + | d0 | d1 | d2 |
-                   ---- ---- ----
-                - | c0 | c1 |
-                   ---- ---- ----
-                -      | e1 | e2 |
-                        ---- ----
-    """
+    The core observation leading to refined Karatsuba is that some additions
+    are performed twice.
+    Consider the example with n =4.
+    Let c = a0b0; d = (a0+a1)(b0+b1); e = a1b1;
 
+    Normal Karatsuba computes:
+      0    1    2    3    4    5    6
+     ---- ---- ----      ---- ---- ----
+    | c0 | c1 | c2 |    | e0 | e1 | e2 |
+     ---- ---- ---- ---- ---- ----  ----
+            + | d0 | d1 | d2 |
+               ---- ---- ----
+            - | c0 | c1 | c2 |
+               ---- ---- ----
+            - | e0 | e1 | e2 |
+               ---- ---- ----
+    Here c2-e0 is computed twice (in column 2 and 4).
+    For larger polynomials, this duplicate computation becomes significant (n//2-1)
+    We can, thus, compute that part (say h) once and save some additions.
+    Consequently, refined Karatsuba looks like
+      0    1    2    3    4    5    6
+     ---- ---- ----      ---- ---- ----
+    | c0 | c1 | h0 |    |-h0 | e1 | e2 |
+     ---- ---- ---- ---- ---- ----  ----
+            + | d0 | d1 | d2 |
+               ---- ---- ----
+            - | c0 | c1 |
+               ---- ---- ----
+            -      | e1 | e2 |
+                    ---- ----
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand with n coefficients.
+    b : Poly
+        second multiplicand with n coefficients.
+    Returns
+    ----------
+    Poly
+        product a*b with 2n-1 coefficients.
+    """
     assert a.n == b.n
     assert a.q == b.q
     n = a.n
@@ -219,6 +257,21 @@ def polymul_refined_karatsuba(a, b):
 
 
 def testcase_karatsuba(n, q, printPoly=True):
+    """Random test of standard two-way Kartsuba multiplication (`polymul_karatsuba`).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise.
+    """
     print(f"Testing Karatsuba with n={n}, q={q}")
     a = Poly.random(n, q)
     b = Poly.random(n, q)
@@ -238,6 +291,23 @@ def testcase_karatsuba(n, q, printPoly=True):
        return 1
 
 def testcase_karatsuba_recursive(n, q, t, printPoly=True):
+    """Random test of recursive two-way Kartsuba multiplication (`polymul_karatsuba_recursive`).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    t : int
+        threshold. If n <= threshold, switch to schoolbook.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise
+    """
     print(f"Testing recursive Karatsuba with n={n}, q={q}, t={4}")
     a = Poly.random(n, q)
     b = Poly.random(n, q)
@@ -257,6 +327,21 @@ def testcase_karatsuba_recursive(n, q, t, printPoly=True):
        return 1
 
 def testcase_refined_karatsuba(n, q, printPoly=True):
+    """Random test of refined two-way Kartsuba multiplication (`polymul_refined_karatsuba`).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise.
+    """
     print(f"Testing refined Karatsuba with n={n}, q={q}")
     a = Poly.random(n, q)
     b = Poly.random(n, q)

@@ -1,17 +1,44 @@
 #!/usr/bin/env python3
+"""Section 2.2.5: Algorithms for Computing NTTs.
+
+Covers fast fourier-transforms to implement the cyclic and negacyclic NTT.
+The forward NTT is implemented using the Cooley--Tukey FFT algorithm, while the
+inverse NTT is implemented using the Gentleman--Sande FFT algorithm.
+"""
 from poly import Poly
-from common import bitreverse, isPrime, primitiveRootOfUnity, ntt_naive_cyclic, \
-                   invntt_naive_cyclic, ntt_naive_negacyclic, invntt_naive_negacyclic
+import common
 import sys
 import math
 
-# TODO: write documentation for each function
-
 def precomp_ct_cyclic(n, root, q):
+    """Precompute the required twiddle factors for a cyclic Cooley--Tukey FFT.
+
+    First layer: [1]
+    Second layer: [1, -1] = [1, root^(n/2)]
+    Third layer: [1, -1, sqrt(-1), -sqrt(-1)] = [1, root^(n/2), root^(n/4), root^(3n/4)]
+    ...
+
+    Note that the twiddle factors repeat. In a real implementation one would
+    not store them repeatedly. One would also eliminate the multiplications
+    by 1 and -1
+
+    Parameters
+    ----------
+    n : int
+        size of the NTT (number of coefficients).
+    root : int
+        n-th primitive root of unity modulo q.
+    q : int
+        modulus.
+    Returns
+    ----------
+    list
+        list of lists of twiddle factors.
+    """
     logn =  int(math.log(n, 2))
     assert 2**logn == n
     twiddles = [pow(root, i, q) for i in range(n//2)]
-    twiddles = bitreverse(twiddles)
+    twiddles = common.bitreverse(twiddles)
 
     twiddlesPerLayer = []
     for i in range(logn):
@@ -21,10 +48,31 @@ def precomp_ct_cyclic(n, root, q):
 
 
 def precomp_ct_negacyclic(n, root, q):
+    """Precompute the required twiddle factors for a negacyclic Cooley--Tukey FFT.
+
+    First layer: [-1] = [root^(n/2)]
+    Second layer: [sqrt(-1), -sqrt(-1)] = [root^(n/4), root^(3n/4)]
+    Third layer: [sqrt(root^(n/4)), -sqrt(root^(n/4)), sqrt(root^(3n/4)), -sqrt(root^(3n/4))]
+                =[root^(n/8), root^(5n/8), root^(3n/8), root^(7n/8)]
+    ...
+
+    Parameters
+    ----------
+    n : int
+        size of the NTT (number of coefficients).
+    root : int
+        2n-th primitive root of unity modulo q.
+    q : int
+        modulus.
+    Returns
+    ----------
+    list
+        list of lists of twiddle factors.
+    """
     logn =  int(math.log(n, 2))
     assert 2**logn == n
     twiddles = [pow(root, i, q) for i in range(n)]
-    twiddles = bitreverse(twiddles)
+    twiddles = common.bitreverse(twiddles)
     twiddlesPerLayer = []
     off = 1
     for i in range(logn):
@@ -34,6 +82,26 @@ def precomp_ct_negacyclic(n, root, q):
     return twiddlesPerLayer
 
 def ntt_ct(a, twiddles):
+    """Compute a Cooley--Tukey FFT.
+
+    Expects twiddles to be computed by `precomp_ct_cyclic` or `precomp_ct_negacyclic`
+    Each layer computes a split of
+    Z_q[x]/(x^n - c^2) to Z_q[x]/(x^(n/2) - c) x Z_q[x]/(x^(n/2) + c)
+    using the CT butterfly:
+        a_i' = a_i + c*a_j
+        a_j' = a_i - c*a_j
+
+    Parameters
+    ----------
+    a : list
+        polynomial with n coefficients to be transformed to NTT domain.
+    twiddles : list
+        list of lists of twiddle factors per NTT layer.
+    Returns
+    ----------
+    Poly
+        a transformed to NTT domain.
+    """
     a = a.copy()
     n = a.n
     q = a.q
@@ -57,22 +125,60 @@ def ntt_ct(a, twiddles):
     return a
 
 def precomp_gs_cyclic(n, root, q):
+    """Precompute the required twiddle factors for a cyclic Gentleman--Sande inverse FFT.
+
+    The twiddles correspond to the inverses of the ones computes in `precomp_ct_cyclic`.
+    Note that the twiddle factors repeat. In a real implementation one would
+    not store them repeatedly. One would also eliminate the multiplications
+    by 1 and -1.
+
+    Parameters
+    ----------
+    n : int
+        size of the NTT (number of coefficients).
+    root : int
+        n-th primitive root of unity modulo q.
+    q : int
+        modulus.
+    Returns
+    ----------
+    list
+        list of lists of twiddle factors.
+    """
     logn =  int(math.log(n, 2))
     assert 2**logn == n
     twiddles = [pow(root, -i, q) for i in range(n//2)]
-    twiddles = bitreverse(twiddles)
+    twiddles = common.bitreverse(twiddles)
 
     twiddlesPerLayer = []
     for i in range(logn):
         twiddlesPerLayer.append(twiddles[:2**(logn - 1- i)])
-
     return twiddlesPerLayer
 
 def precomp_gs_negacyclic(n, root, q):
+    """Precompute the required twiddle factors for a negacyclic Gentleman--Sande inverse FFT.
+
+    The twiddles correspond to the inverses of the ones computes in `precomp_ct_negacyclic`.
+    Note that the twiddle factors repeat. In a real implementation one would
+    not store them repeatedly.
+
+    Parameters
+    ----------
+    n : int
+        size of the NTT (number of coefficients).
+    root : int
+        2n-th primitive root of unity modulo q.
+    q : int
+        modulus.
+    Returns
+    ----------
+    list
+        list of lists of twiddle factors.
+    """
     logn =  int(math.log(n, 2))
     assert 2**logn == n
     twiddles = [pow(root, -(i+1), q) for i in range(n)]
-    twiddles = bitreverse(twiddles)
+    twiddles = common.bitreverse(twiddles)
 
     twiddlesPerLayer = []
     off = 0
@@ -83,6 +189,27 @@ def precomp_gs_negacyclic(n, root, q):
     return twiddlesPerLayer
 
 def invntt_gs(a, twiddles):
+    """Compute a Gentleman--Sande inverse FFT.
+
+    Expects twiddles to be computed by `precomp_gs_cyclic` or `precomp_gs_negacyclic`
+    Each layer computes the CRT of
+    Z_q[x]/(x^(n/2) - c) x Z_q[x]/(x^(n/2) + c) to recover an element in Z_q[x]/(x^n - c^2)
+    using the GS butterfly:
+        a_i' = 1/2 * (a_i + a_j)
+        a_j' = 1/2 * 1/c * (a_i - a_j)
+    The scaling by 1/2 is usually delayed until the very end, i.e., multiplication by 1/n.
+
+    Parameters
+    ----------
+    a : list
+        input in NTT domain.
+    twiddles : list
+        list of lists of twiddle factors per NTT layer.
+    Returns
+    ----------
+    Poly
+        a transformed to normal domain.
+    """
     a = a.copy()
     n = a.n
     q = a.q
@@ -112,18 +239,52 @@ def invntt_gs(a, twiddles):
         a.coeffs[i] = (a.coeffs[i] * ninv) % q
     return a
 
-def polymul_ntt_ct_gs(a, b, twiddleNtt, twiddlesInvntt):
-    antt = ntt_ct(a, twiddleNtt)
-    bntt = ntt_ct(b, twiddleNtt)
+def polymul_ntt_ct_gs(a, b, twiddlesNtt, twiddlesInvntt):
+    """Compute a polynomial multiplication by computing iNTT(NTT(a) o NTT(b)).
+
+    Works for both the cyclic and the negacyclic case (with the correct twiddles).
+
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand polynomial with n coefficients.
+    b : Poly
+        second multiplicand polynomial with n coefficients.
+    twiddlesNtt : list
+        twiddles for the foward NTT as computed by `precomp_ct_cyclic` or `precomp_ct_negacyclic`.
+    tiwddlesInvntt : list
+        twiddles for the inverse nTT as computed by `precomp_gs_cyclic` or `precmp_gs_negacyclic`.
+    Returns
+    ----------
+    Poly
+        product a*b with n coefficients.
+    """
+    antt = ntt_ct(a, twiddlesNtt)
+    bntt = ntt_ct(b, twiddlesNtt)
     cntt = antt.pointwise(bntt)
     return invntt_gs(cntt, twiddlesInvntt)
 
 
 
 def testcase_cyclic(n, q, printPoly=True):
+    """Random test of cyclic NTT multiplication for Zq[x]/(x^n-1).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise.
+    """
     rc = 0
     # find a n-th root of unity
-    root = primitiveRootOfUnity(n, q)
+    root = common.primitiveRootOfUnity(n, q)
     # precompute twiddles
     twiddlesNtt = precomp_ct_cyclic(n, root, q)
     # precompute twiddles
@@ -137,9 +298,9 @@ def testcase_cyclic(n, q, printPoly=True):
     antt = ntt_ct(a, twiddlesNtt)
     if printPoly: print("antt=", antt)
     # compute a naive reference NTT to compare (output is in normal order)
-    anttref = ntt_naive_cyclic(a, root)
+    anttref = common.ntt_naive_cyclic(a, root)
     # bitreverse, so we can compare
-    anttref.coeffs = bitreverse(anttref.coeffs)
+    anttref.coeffs = common.bitreverse(anttref.coeffs)
     if printPoly: print("antt_ref=", anttref)
     print(f"equal: {antt == anttref}")
     if antt != anttref:
@@ -150,12 +311,12 @@ def testcase_cyclic(n, q, printPoly=True):
     antt = Poly.random(n, q)
     if printPoly: print("antt=", antt)
     # GS needs inputs in bitreversed order
-    anttbrv = Poly(bitreverse(antt.coeffs), q)
+    anttbrv = Poly(common.bitreverse(antt.coeffs), q)
     # tranform to ntt domain (output will be bitreversed)
     a = invntt_gs(anttbrv, twiddlesInvntt)
     if printPoly: print("a=", a)
     # compute a naive reference NTT to compare (output is in normal order)
-    aref = invntt_naive_cyclic(antt, root)
+    aref = common.invntt_naive_cyclic(antt, root)
     if printPoly: print("aref=", aref)
     print(f"equal: {a == aref}")
     if a != aref:
@@ -198,9 +359,24 @@ def testcase_cyclic(n, q, printPoly=True):
     return rc
 
 def testcase_negacyclic(n, q, printPoly=True):
+    """Random test of negacyclic NTT multiplication for Zq[x]/(x^n+1).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise.
+    """
     rc = 0
     # find a n-th root of unity
-    root = primitiveRootOfUnity(2*n, q)
+    root = common.primitiveRootOfUnity(2*n, q)
     # precompute twiddles
     twiddlesNtt = precomp_ct_negacyclic(n, root, q)
     # precompute twiddles
@@ -214,9 +390,9 @@ def testcase_negacyclic(n, q, printPoly=True):
     antt = ntt_ct(a, twiddlesNtt)
     if printPoly: print("antt=", antt)
     # compute a naive reference NTT to compare (output is in normal order)
-    anttref = ntt_naive_negacyclic(a, root)
+    anttref = common.ntt_naive_negacyclic(a, root)
     # bitreverse, so we can compare
-    anttref.coeffs = bitreverse(anttref.coeffs)
+    anttref.coeffs = common.bitreverse(anttref.coeffs)
     if printPoly: print("antt_ref=", anttref)
     print(f"equal: {antt == anttref}")
     if antt != anttref:
@@ -228,12 +404,12 @@ def testcase_negacyclic(n, q, printPoly=True):
     antt = Poly.random(n, q)
     if printPoly: print("antt=", antt)
     # GS needs inputs in bitreversed order
-    anttbrv = Poly(bitreverse(antt.coeffs), q)
+    anttbrv = Poly(common.bitreverse(antt.coeffs), q)
     # tranform to ntt domain (output will be bitreversed)
     a = invntt_gs(anttbrv, twiddlesInvntt)
     if printPoly: print("a=", a)
     # compute a naive reference NTT to compare (output is in normal order)
-    aref = invntt_naive_negacyclic(antt, root)
+    aref = common.invntt_naive_negacyclic(antt, root)
     if printPoly: print("aref=", aref)
     print(f"equal: {a == aref}")
     if a != aref:

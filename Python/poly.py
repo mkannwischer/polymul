@@ -1,41 +1,38 @@
-""" Module containing common code for representing polynomials
-
-"""
+"""Module containing common code for representing polynomials."""
 
 from enum import Enum
 from random import randint
 
 class Poly:
-    """
-    Representing polynomials in an arbitrary ring with coefficients modulo q
-
+    """Representing polynomials in an arbitrary ring with coefficients modulo q.
 
     Attributes
     ----------
     n : int
-        number of coefficients (degree+1)
+        number of coefficients (degree+1).
     coeffs : int[]
-        the cofficients of the polynomial, with coeffs[i] corresponding to x^i
+        the cofficients of the polynomial, with coeffs[i] corresponding to x^i.
     q : int
         modulus. Optional.
     """
 
     def __init__(self, coeffs, q=None):
+        """Initialize Poly given a list of coefficients and optionally a modulus q."""
         self.coeffs = coeffs
         self.n = len(coeffs)
         self.q = q
 
     def __str__(self):
+        """Convert a Poly to a string e.g., '1x^2+2x+3'."""
         a = self.coeffs
         tmp = [f"{a[i]}x^{i}" for i in range(len(a)) if a[i] != 0][::-1]
         return " + ".join(tmp)
 
 
     def __mul__(self, other):
-        """
-        multiplies two polynomials and returns a double-sized product.
-        Does not apply any modular reductions mod q
+        """Multiply two polynomials and returns a double-sized product or multiplies a polynomial by an integer.
 
+        Does not apply any modular reductions mod q
         """
         if isinstance(other, Poly):
             assert self.q == other.q
@@ -58,13 +55,16 @@ class Poly:
             raise NotImplementedError()
 
     def __rmul__(self, factor):
+        """Multply a polynomial by an integer."""
         return self*factor
 
     def __eq__(self, other):
+        """Check two polynomials for equality by comparing their coefficient lists."""
         return self.coeffs == other.coeffs
 
 
     def __add__(self, other):
+        """Add two polynomials and perform a reduction modulo q."""
         assert self.q == other.q
         q = self.q
         c = Poly.zero(max(self.n, other.n), q)
@@ -77,6 +77,7 @@ class Poly:
         return c
 
     def __sub__(self, other):
+        """Subtract two polynomials and perform a reduction modulo q."""
         assert self.q == other.q
         q = self.q
         c = Poly.zero(max(self.n, other.n), q)
@@ -89,6 +90,7 @@ class Poly:
         return c
 
     def __rshift__(self, shift):
+        """Shift each coefficient of a polynomial to the right."""
         self.reduce()
         c = Poly.zero(self.n, self.q)
         for i in range(self.n):
@@ -97,15 +99,12 @@ class Poly:
 
 
     def pointwise(self, other):
-        def reduce(self):
-        """
-        Performs a coefficient-wise multiplication followed by a reduction
-        modulo q.
+        """Perform a coefficient-wise multiplication followed by a reduction modulo q.
 
         Parameters
         ----------
         other: Poly
-               The other polynomial
+               The other polynomial.
 
         """
         assert self.q == other.q
@@ -118,42 +117,37 @@ class Poly:
 
 
     def reduce(self):
-        """
-        Reduces a polynomial mod q, i.e., [0,q)
-
-        """
+        """Reduce a polynomial mod q, i.e., [0,q)."""
         if self.q:
             for i in range(len(self.coeffs)):
                 self.coeffs[i] %= self.q
 
 
     def copy(self):
+        """Create a copy of a polynomial."""
         return Poly(self.coeffs.copy(), self.q)
 
     @staticmethod
     def random(n, q):
-        """
-        returns a uniformly random polynomial with n coefficients in [0,q)
+        """Sample a uniformly random polynomial with n coefficients in [0,q).
 
         Parameters
         ----------
         n : int
-            number of coefficients
+            number of coefficients.
         q : int
-            modulus
+            modulus.
         """
-
         return Poly([randint(0, q-1) for _ in range(n)], q)
 
     @staticmethod
     def zero(n, q):
-        """
-        returns a polynomial with n all-zero coefficients
+        """Create a polynomial with coefficients all n coefficients zero.
 
         Parameters
         ----------
         n : int
-            number of coefficients
+            number of coefficients.
         """
         return Poly([0 for _ in range(n)], q)
 

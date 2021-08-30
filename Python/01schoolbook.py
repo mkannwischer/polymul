@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
+"""Section 2.2.1: Schoolbook multiplication.
+
+Illustrates schoolbook multiplication in various polynomial rings.
+This is not rocket science, but for reference of what the other algorithms
+should be implementing.
+
+"""
+
 from poly import Poly
 
 
 def polymul_schoolbook(a, b):
-    """
-    multiplies two polynomials a and b in Z_q[x]
+    """Multiplies two polynomials a and b in Z_q[x].
+
     Parameters
     ----------
     a : Poly
-        multiplicand
+        first multiplicand with n1 coefficients.
     b : Poly
-        multiplicand
+        second multiplicand with n2 coefficients.
     Returns
     ----------
     Poly
-        a*b with a.n+b.n-1 coefficients
+        product a*b with n1+n2-1 coefficients.
     """
     assert a.q == b.q
 
@@ -31,6 +39,19 @@ def polymul_schoolbook(a, b):
     return c
 
 def polymul_schoolbook_cyclic(a, b):
+    """Cyclic convolution of two polynomials, i.e., multiplication mod x^n - 1.
+
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand with n coefficients.
+    b : Poly
+        second multiplicand with n coefficients.
+    Returns
+    ----------
+    Poly
+        product a*b with n coefficients.
+    """
     assert a.q == b.q
     assert a.n == b.n
     n = a.n
@@ -46,6 +67,19 @@ def polymul_schoolbook_cyclic(a, b):
     return c
 
 def polymul_schoolbook_negacyclic(a, b):
+    """Negacyclic convolution of two polynomials, i.e., multiplication mod x^n + 1.
+
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand with n coefficients.
+    b : Poly
+        second multiplicand with n coefficients.
+    Returns
+    ----------
+    Poly
+        product a*b with n coefficients.
+    """
     assert a.q == b.q
     assert a.n == b.n
     n = a.n
@@ -56,7 +90,7 @@ def polymul_schoolbook_negacyclic(a, b):
     c = Poly(c2n.coeffs[:n], q)
     for i in range(n, c2n.n):
         c.coeffs[i-n] -= c2n.coeffs[i]
-    
+
     c.reduce()
     return c
 
@@ -86,4 +120,3 @@ if __name__ == "__main__":
     print("# Polynomial multiplication in Z_{17}[x]/(x^2+1)")
     c = polymul_schoolbook_negacyclic(a, b)
     print("a*b=", c) # a*b= 1x^1 + 1x^0
-

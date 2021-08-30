@@ -1,44 +1,105 @@
 #!/usr/bin/env python3
+"""Section 2.2.6: Radix-3 FFT.
+
+Illustrates Cooley--Tukey and Genteman--Sande FFTs for radix 3.
+"""
 import sys
 import math
 from poly import Poly
-# TODO: change all imports to not use specific imports; so that one know where to look for stuff
-from common import isPrime, primitiveRootOfUnity, reverseBaseN, \
-                   ntt_naive_cyclic, invntt_naive_cyclic
+import common
 
-# TODO: write documentation for each function
 def precomp_ntt_cyclic(n, root, q):
+    """Precompute the required twiddle factors for a cyclic Cooley--Tukey FFT.
+
+    Note that the twiddle factors repeat. In a real implementation one would
+    not store them repeatedly. One would also eliminate the multiplications
+    by 1.
+
+    Parameters
+    ----------
+    n : int
+        size of the NTT (number of coefficients).
+    root : int
+        n-th primitive root of unity modulo q.
+    q : int
+        modulus.
+    Returns
+    ----------
+    list
+        list of lists of twiddle factors.
+    """
     logn =  int(math.log(n, 3))
     assert 3**logn == n
 
     twiddles = []
-    for j in reverseBaseN(list(range(3**(logn-1))), 3):
+    for j in common.reverseBaseN(list(range(3**(logn-1))), 3):
+        # each butterfly requires two twiddles c and c^2.
         twiddles.extend([pow(root, j, q), pow(root, 2*j, q)])
 
     twiddlesPerLayer = []
     for i in range(logn):
         twiddlesPerLayer.append(twiddles[:2*3**i])
 
-    print(twiddlesPerLayer)
     return twiddlesPerLayer
 
 def precomp_invntt_cyclic(n, root, q):
+    """Precompute the required twiddle factors for a cyclic inverse Genteman--Sande FFT.
 
+    Note that the twiddle factors repeat. In a real implementation one would
+    not store them repeatedly. One would also eliminate the multiplications
+    by 1.
+
+    Parameters
+    ----------
+    n : int
+        size of the NTT (number of coefficients).
+    root : int
+        n-th primitive root of unity modulo q.
+    q : int
+        modulus.
+    Returns
+    ----------
+    list
+        list of lists of twiddle factors.
+    """
     logn =  int(math.log(n, 3))
     assert 3**logn == n
 
     twiddles = []
-    for j in reverseBaseN(list(range(3**(logn-1))), 3):
+    for j in common.reverseBaseN(list(range(3**(logn-1))), 3):
+        # each butterfly requires two twiddles c^-1, c^-2
         twiddles.extend([pow(root, -j, q), pow(root, -2*j, q)])
 
     twiddlesPerLayer = []
     for i in range(logn):
         twiddlesPerLayer.append(twiddles[:2*3**(logn - 1- i)])
-
-    print(twiddlesPerLayer)
     return twiddlesPerLayer
 
 def ntt(a, twiddles, root3):
+    """Compute a Cooley--Tukey Radix-3 FFT.
+
+    Expects twiddles to be computed by `precomp_ntt_cyclic`.
+    Each layer computes a split of
+    Z_q[x]/(x^n - c^3) to Z_q[x]/(x^(n/3) - c) x Z_q[x]/(x^(n/3) - wc) x Z_q[x]/(x^(n/3) - w^2c)
+    with w being a primitive 3rd root of unity.
+    It is using the CT-style butterfly:
+        a_i     = a_i +     c a_{i+n} +     c^2 a_{i+2n}
+        a_{i+n} = a_i +   w c a_{i+n} + w^2 c^2 a_{i+2n}
+        a_{i+2n}= a_i + w^2 c a_{i+n} + w   c^2 a_{i+2n}
+
+    Parameters
+    ----------
+    a : list
+        polynomial with n coefficients to be transformed to NTT domain.
+    twiddles : list
+        list of lists of twiddle factors per NTT layer.
+    root3 : int
+        primitive 3rd root of unity (root^(n/3) for the used n-th root of unity).
+    Returns
+    ----------
+    Poly
+        a transformed to NTT domain.
+    """
     a = a.copy()
     n = a.n
     q = a.q
@@ -69,6 +130,34 @@ def ntt(a, twiddles, root3):
     return a
 
 def invntt(a, twiddles, root3):
+    """Compute Gentleman--Sande radix-3 inverse NTT.
+
+    Expects twiddles to be computed by `precomp_invntt_cyclic`.
+
+
+    Each layer computes the CRT of
+    Z_q[x]/(x^(n/3) - c) x Z_q[x]/(x^(n/3) - wc) x Z_q[x]/(x^(n/3) - w^2c) to
+    recover an element in Z_q[x]/(x^n - c^3)
+    using the GS-style butterfly:
+        a_i     = 1/3     (a_i +     a_{i+n} +     a_{i+2n})
+        a_{i+n} = 1/(3c)  (a_i + w^2 a_{i+n} + w   a_{i+2n})
+        a_{i+2n}= 1/(3c^2)(a_i + w   a_{i_b} + w^2 a_{i+2n})
+
+    The scaling by 1/3 is usually delayed until the very end, i.e., multiplication by 1/n.
+
+    Parameters
+    ----------
+    a : list
+        input in NTT domain.
+    twiddles : list
+        list of lists of twiddle factors per NTT layer.
+    root3 : int
+        primitive 3rd root of unity (root^(n/3) for the used n-th root of unity).
+    Returns
+    ----------
+    Poly
+        a transformed to normal domain.
+    """
     a = a.copy()
     n = a.n
     q = a.q
@@ -104,16 +193,50 @@ def invntt(a, twiddles, root3):
     return a
 
 def polymul_ntt(a, b, twiddleNtt, twiddlesInvntt, root3):
+    """Compute a polynomial multiplication by computing iNTT(NTT(a) o NTT(b)).
+
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand polynomial with n coefficients.
+    b : Poly
+        second multiplicand polynomial with n coefficients.
+    twiddlesNtt : list
+        twiddles for the foward NTT as computed by `precomp_ntt_cyclic`.
+    tiwddlesInvntt : list
+        twiddles for the inverse nTT as computed by `precomp_invntt_cyclic`.
+    root3 : int
+        primitive 3rd root of unity (root^(n/3) for the used n-th root of unity).
+    Returns
+    ----------
+    Poly
+        product a*b with n coefficients.
+    """
     antt = ntt(a, twiddleNtt, root3)
     bntt = ntt(b, twiddleNtt, root3)
     cntt = antt.pointwise(bntt)
     return invntt(cntt, twiddlesInvntt, root3)
 
 def testcase_cyclic(n, q, printPoly=True):
+    """Random test of cyclic NTT multiplication for Zq[x]/(x^n-1).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise.
+    """
     rc = 0
     logn = int(math.log(n, 3))
     # find an n-th root of unity and the corresponding 3-rd root of unity
-    root  = primitiveRootOfUnity(n, q)
+    root  = common.primitiveRootOfUnity(n, q)
     root3 = pow(root, 3**(logn-1), q)
 
     # precompute twiddles
@@ -128,9 +251,9 @@ def testcase_cyclic(n, q, printPoly=True):
     antt = ntt(a, twiddlesNtt, root3)
     if printPoly: print("antt=", antt)
     # compute a naive reference NTT to compare (output is in normal order)
-    anttref = ntt_naive_cyclic(a, root)
+    anttref = common.ntt_naive_cyclic(a, root)
     # base-3-reverse, so we can compare
-    anttref.coeffs = reverseBaseN(anttref.coeffs, 3)
+    anttref.coeffs = common.reverseBaseN(anttref.coeffs, 3)
     if printPoly: print("antt_ref=", anttref)
     print(f"equal: {antt == anttref}")
     if antt != anttref:
@@ -141,12 +264,12 @@ def testcase_cyclic(n, q, printPoly=True):
     antt = Poly.random(n, q)
     if printPoly: print("antt=", antt)
     # GS needs inputs in base-3-reversed order
-    anttbrv = Poly(reverseBaseN(antt.coeffs, 3), q)
+    anttbrv = Poly(common.reverseBaseN(antt.coeffs, 3), q)
     # tranform to ntt domain (output will be base-3-reversed)
     a = invntt(anttbrv, twiddlesInvNtt, root3)
     if printPoly: print("a=", a)
     # compute a naive reference NTT to compare (output is in normal order)
-    aref = invntt_naive_cyclic(antt, root)
+    aref = common.invntt_naive_cyclic(antt, root)
     if printPoly: print("aref=", aref)
     print(f"equal: {a == aref}")
     if a != aref:

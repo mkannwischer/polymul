@@ -1,9 +1,44 @@
 #!/usr/bin/env python3
+"""Section 2.2.3: Toom--Cook multiplication.
+
+Illustrates Toom-3, and Toom-4 multiplication for any modulus.
+"""
+
 from poly import Poly
 import sys
 
-# TODO: write documentation for each function
 def polymul_toom3(a, b):
+    """Compute polynomial product using three-way Toom--Cook multiplication.
+
+    Assumes n is the same for both a and b; also 3 must divide n.
+    Sets y=x^(n/3), s.t.
+    a = a0 + y a1 + y^2 a2
+    b = b0 + y b1 + y^2 b2
+
+    Then evaluates at y = {0, infty, 1, -1, -2}, performs 5 multiplications
+    of degree n/3 polynomials, and interpolates c using the formulas presented
+    in the thesis.
+
+    During the interpolation, we need to divide by 2 and 3
+    In case q is co-prime to 2 and 3, we can simply multiply by the inverse
+
+    As q is often a power of two, the inverse of two does often not exist.
+    In that case there is a workaround: We do the small multiplications
+    modulo 2q instead of q, such that we can divide by two during the
+    interpolation without changing the result.
+
+
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand with n coefficients.
+    b : Poly
+        second multiplicand with n coefficients.
+    Returns
+    ----------
+    Poly
+        product a*b with 2n-1 coefficients
+    """
     assert a.n == b.n
     assert a.q == b.q
     q = a.q
@@ -14,14 +49,6 @@ def polymul_toom3(a, b):
     assert q % 3 != 0
 
     qq = q
-    # During the interpolation, we need to divide by 2 and 3
-    # In case q is co-prime to 2 and 3, we can simply multiply by the inverse
-
-    # As q is often a power of two, the inverse of two does often not exist.
-    # In that case there is a workaround: We do the small multiplications
-    # modulu 2q instead of q, such that we can divide by two during the
-    # interpolation without changing the result.
-
     try:
         inv2 = pow(2, -1, q)
     except ValueError:
@@ -95,6 +122,35 @@ def polymul_toom3(a, b):
     return c
 
 def polymul_toom4(a, b):
+    """Compute polynomial product using four-way Toom--Cook multiplication.
+
+    Assumes n is the same for both a and b; also 4 must divide n.
+    Sets y=x^(n/4), s.t.
+    a = a0 + y a1 + y^2 a2 + y^3 a3
+    b = b0 + y b1 + y^2 b2 + y^3 a3
+
+    Then evaluates at y = {0, infty, 1, -1, 2, -2, 3}, performs 7 multiplications
+    of degree n/4 polynomials, and interpolates c using the formulas presented
+    in the thesis.
+
+    During the interpolation, we need to divide by 8 and 3
+    In case q is co-prime to 8 and 3, we can simply multiply by the inverse.
+    As q is often a power of two, the inverse of 8 does often not exist.
+    In that case there is a workaround: We do the small multiplications
+    modulo 8q instead of q, such that we can divide by two during the
+    interpolation without changing the result.
+
+    Parameters
+    ----------
+    a : Poly
+        first multiplicand with n coefficients.
+    b : Poly
+        second multiplicand with n coefficients.
+    Returns
+    ----------
+    Poly
+        product a*b with 2n-1 coefficients.
+    """
     assert a.n == b.n
     assert a.q == b.q
     q = a.q
@@ -104,13 +160,6 @@ def polymul_toom4(a, b):
     assert q % 3 != 0
 
     qq = q
-
-    # During the interpolation, we need to divide by 8 and 3
-    # In case q is co-prime to 8 and 3, we can simply multiply by the inverse
-    # As q is often a power of two, the inverse of 8 does often not exist.
-    # In that case there is a workaround: We do the small multiplications
-    # modulu 8q instead of q, such that we can divide by two during the
-    # interpolation without changing the result.
     try:
         inv8 = pow(8, -1, q)
         inv2 = pow(2, -1, q)
@@ -209,6 +258,21 @@ def polymul_toom4(a, b):
     return c
 
 def testcase_toom3(n, q, printPoly=True):
+    """Random test of three-way Toom--Cook multiplication (`polymul_toom3`).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise.
+    """
     print(f"Testing Toom3 multiplication with q={q}, n={n}")
     a = Poly.random(n, q)
     b = Poly.random(n, q)
@@ -227,6 +291,21 @@ def testcase_toom3(n, q, printPoly=True):
         return 1
 
 def testcase_toom4(n, q, printPoly=True):
+    """Random test of four-way Toom--Cook multiplication (`polymul_toom4`).
+
+    Parameters
+    ----------
+    n : int
+        number of coefficients of input polynomials.
+    q : int
+        modulus.
+    printPoly : boolean
+        flag for printing inputs and outputs.
+    Returns
+    ----------
+    int
+        0 if test is successful, 1 otherwise.
+    """
     print(f"Testing Toom4 multiplication with q={q}, n={n}")
     a = Poly.random(n, q)
     b = Poly.random(n, q)
