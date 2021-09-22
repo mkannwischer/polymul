@@ -20,7 +20,7 @@ def precomp_ct_cyclic(n, root, q):
 
     Note that the twiddle factors repeat. In a real implementation one would
     not store them repeatedly. One would also eliminate the multiplications
-    by 1 and -1
+    by 1 and -1.
 
     Parameters
     ----------
@@ -127,7 +127,7 @@ def ntt_ct(a, twiddles):
 def precomp_gs_cyclic(n, root, q):
     """Precompute the required twiddle factors for a cyclic Gentleman--Sande inverse FFT.
 
-    The twiddles correspond to the inverses of the ones computes in `precomp_ct_cyclic`.
+    The twiddles correspond to the inverses of the ones computed in `precomp_ct_cyclic`.
     Note that the twiddle factors repeat. In a real implementation one would
     not store them repeatedly. One would also eliminate the multiplications
     by 1 and -1.
@@ -158,7 +158,7 @@ def precomp_gs_cyclic(n, root, q):
 def precomp_gs_negacyclic(n, root, q):
     """Precompute the required twiddle factors for a negacyclic Gentleman--Sande inverse FFT.
 
-    The twiddles correspond to the inverses of the ones computes in `precomp_ct_negacyclic`.
+    The twiddles correspond to the inverses of the ones computed in `precomp_ct_negacyclic`.
     Note that the twiddle factors repeat. In a real implementation one would
     not store them repeatedly.
 

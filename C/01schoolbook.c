@@ -1,12 +1,27 @@
+/**
+ * @file 01schoolbook.c
+ * @brief Section 2.2.1: Schoolbook multiplication
+ *
+ * Illustrates schoolbook multiplication in various polynomial rings.
+ * This is not rocket science, but for reference of what the other algorithms
+ * should be implementing.
+ */
+
 #include "poly.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
-
-// TODO: decent C function descriptions
-
-// performs a schoolbook multiplication computing the full product with 2*n-1 coeffs
+/**
+ * @brief Multiplies two polynomials a and b in Z_q[x]
+ *
+ * @param c full product with aN+bN-1 coefficients
+ * @param a first multiplicand with aN coefficients
+ * @param aN number of coefficients in a
+ * @param b second multiplicand with bN coefficients
+ * @param bN number of coefficients in b
+ * @param q modulus
+ */
 static void polymul_schoolbook(T* c, const T* a, size_t aN, const T* b,
                                size_t bN, T q){
     size_t i,j;
@@ -24,7 +39,15 @@ static void polymul_schoolbook(T* c, const T* a, size_t aN, const T* b,
     }
 }
 
-// performs a schoolbook multiplication and reduces the product mod X^n-1
+/**
+ * @brief Cyclic convolution of two polynomials, i.e., multiplication mod x^n - 1
+ *
+ * @param c product ab mod x^n-1 with n coefficients
+ * @param a first multiplicand with n coefficients
+ * @param b second multiplicand with n coefficients
+ * @param n number of coefficients in a, b, c
+ * @param q modulus
+ */
 static void polymul_schoolbook_cyclic(T* c, const T* a, const T* b,
                                size_t n, T q){
     T t[2*n-1];
@@ -41,7 +64,15 @@ static void polymul_schoolbook_cyclic(T* c, const T* a, const T* b,
     }
 }
 
-// performs a schoolbook multiplication and reduces the product mod X^n+1
+/**
+ * @brief Negacyclic convolution of two polynomials, i.e., multiplication mod x^n + 1
+ *
+ * @param c product ab mod x^n+1 with n coefficients
+ * @param a first multiplicand with n coefficients
+ * @param b second multiplicand with n coefficients
+ * @param n number of coefficients in a, b, c
+ * @param q modulus
+ */
 static void polymul_schoolbook_negacyclic(T* c, const T* a, const T* b,
                                size_t n, T q){
     T t[2*n-1];

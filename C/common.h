@@ -1,3 +1,9 @@
+/**
+ * @file common.h
+ * @brief Common code for pre-computation.
+ *
+ * Defines T datatype which is used throughout as the coefficient datatype.
+ */
 #ifndef COMMON_H
 #define COMMON_H
 
@@ -18,8 +24,21 @@ typedef uint32_t T;
 typedef uint64_t T2;
 #endif
 
-// TODO: document this function
+/**
+ * @brief Bitreverse an array of length n inplace
+ *
+ * @param src array
+ * @param n length of array
+ */
 void bitreverse(T *src, size_t n);
+
+/**
+ * @brief Computes logarithm with arbitrary base
+ *
+ * @param x input
+ * @param n base
+ * @return unsigned int log_n(x)
+ */
 unsigned int log_base(unsigned int x, unsigned int n);
 
 #endif
