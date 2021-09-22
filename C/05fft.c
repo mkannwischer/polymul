@@ -1,3 +1,11 @@
+/**
+ * @file 05fft.c
+ * @brief Section 2.2.5: Algorithms for Computing NTTs
+ *
+ * Covers fast fourier-transforms to implement the cyclic and negacyclic NTT.
+ * The forward NTT is implemented using the Cooley--Tukey FFT algorithm, while the
+ * inverse NTT is implemented using the Gentleman--Sande FFT algorithm.
+ */
 #include "common.h"
 #include "poly.h"
 #include "zq.h"
@@ -6,7 +14,24 @@
 #include <stdio.h>
 #include <string.h>
 
-
+/**
+ * @brief Precomputes the required twiddle factors for a cyclic Cooley--Tukey FFT
+ *
+ * First layer: [1]
+ * Second layer: [1, -1] = [1, root^(n/2)]
+ * Third layer: [1, -1, sqrt(-1), -sqrt(-1)] = [1, root^(n/2), root^(n/4), root^(3n/4)]
+ * ...
+ *
+ * Note that the twiddle factors repeat. In a real implementation one would
+ * not store them repeatedly. One would also eliminate the multiplications
+ * by 1 and -1.
+ *
+ * @param twiddles output buffer for the twiddles. needs to hold n-1 twiddles
+ * @param n size of the NTT (number of coefficients)
+ * @param root n-th primitive root of unity modulo q
+ * @param q modulus
+ * @return int 1 if there is an error, 0 otherwise
+ */
 static int precomp_ct_cyclic(T *twiddles, size_t n, T root, T q){
     // Note: Some twiddles could be reused; we need n//2 twiddles for cyclic
     // NTTs, and in layer i we use the first 2^i of them
@@ -44,6 +69,20 @@ static int precomp_ct_cyclic(T *twiddles, size_t n, T root, T q){
     return 0;
 }
 
+/**
+ * @brief Precomputes the required twiddle factors for a negacyclic Cooley--Tukey FFT
+ * First layer: [-1] = [root^(n/2)]
+ * Second layer: [sqrt(-1), -sqrt(-1)] = [root^(n/4), root^(3n/4)]
+ * Third layer: [sqrt(root^(n/4)), -sqrt(root^(n/4)), sqrt(root^(3n/4)), -sqrt(root^(3n/4))]
+ *             =[root^(n/8), root^(5n/8), root^(3n/8), root^(7n/8)]
+ * ...
+ *
+ * @param twiddles output buffer for the twiddles. needs to hold n-1 twiddles
+ * @param n size of the NTT (number of coefficients)
+ * @param root 2n-th primitive root of unity modulo q
+ * @param q modulus
+ * @return int 1 if there is an error, 0 otherwise
+ */
 static int precomp_ct_negacyclic(T *twiddles, size_t n, T root, T q){
     size_t logn = log2(n);
     if(n != (1U<<logn)){
@@ -72,6 +111,23 @@ static int precomp_ct_negacyclic(T *twiddles, size_t n, T root, T q){
     return 0;
 }
 
+/**
+ * @brief Computes a Cooley--Tukey FFT
+ *
+ * Expects twiddles to be computed by `precomp_ct_cyclic` or `precomp_ct_negacyclic`
+ * Each layer computes a split of
+ * Z_q[x]/(x^n - c^2) to Z_q[x]/(x^(n/2) - c) x Z_q[x]/(x^(n/2) + c)
+ * using the CT butterfly:
+ * ```
+ *   a_i' = a_i + c*a_j
+ *   a_j' = a_i - c*a_j
+ * ```
+ *
+ * @param a polynomial with n coefficients to be transformed to NTT domain
+ * @param twiddles twiddle factors computed by `precomp_ct_cyclic` or `precomp_ct_negacyclic`
+ * @param n number of coefficients in a
+ * @param q modulus
+ */
 static void ntt_ct(T *a, T *twiddles, size_t n, T q){
     size_t logn = log2(n);
 
@@ -94,7 +150,20 @@ static void ntt_ct(T *a, T *twiddles, size_t n, T q){
     }
 }
 
-
+/**
+ * @brief Precomputes the required twiddle factors for a cyclic Gentleman--Sande inverse FFT
+ *
+ * The twiddles correspond to the inverses of the ones computed in `precomp_ct_cyclic`.
+ * Note that the twiddle factors repeat. In a real implementation one would
+ * not store them repeatedly. One would also eliminate the multiplications
+ * by 1 and -1.
+ *
+ * @param twiddles output buffer for the twiddles. needs to hold n-1 twiddles
+ * @param n size of the NTT (number of coefficients)
+ * @param root n-th primitive root of unity modulo q
+ * @param q modulus
+ * @return int 1 if there is an error, 0 otherwise
+ */
 static int precomp_gs_cyclic(T *twiddles, size_t n, T root, T q){
     // Note: some twiddles could be reused; we need n//2 twiddles for cyclic
     // NTTs, and in layer i we use the first 2^(log_2(n)-1-i) of them
@@ -133,7 +202,19 @@ static int precomp_gs_cyclic(T *twiddles, size_t n, T root, T q){
     return 0;
 }
 
-
+/**
+ * @brief Precomputes the required twiddle factors for a negacyclic Gentleman--Sande inverse FFT
+ *
+ * The twiddles correspond to the inverses of the ones computed in `precomp_ct_negacyclic`.
+ * Note that the twiddle factors repeat. In a real implementation one would
+ * not store them repeatedly.
+ *
+ * @param twiddles output buffer for the twiddles. needs to hold n-1 twiddles
+ * @param n size of the NTT (number of coefficients)
+ * @param root 2n-th primitive root of unity modulo q
+ * @param q modulus
+ * @return int 1 if there is an error, 0 otherwise
+ */
 static int precomp_gs_negacyclic(T *twiddles, size_t n, T root, T q){
     size_t logn = log2(n);
     if(n != (1U<<logn)){
@@ -162,8 +243,24 @@ static int precomp_gs_negacyclic(T *twiddles, size_t n, T root, T q){
     return 0;
 }
 
-
-
+/**
+ * @brief Computes a Gentleman--Sande inverse FFT
+ *
+ * Expects twiddles to be computed by `precomp_gs_cyclic` or `precomp_gs_negacyclic`
+ * Each layer computes the CRT of
+ * `Z_q[x]/(x^(n/2) - c) x Z_q[x]/(x^(n/2) + c)` to recover an element in `Z_q[x]/(x^n - c^2)`
+ * using the GS butterfly:
+ * ```
+ *   a_i' = 1/2 * (a_i + a_j)
+ *   a_j' = 1/2 * 1/c * (a_i - a_j)
+ * ```
+ * The scaling by 1/2 is usually delayed until the very end, i.e., multiplication by 1/n.
+ *
+ * @param a input in NTT domain
+ * @param twiddles twiddle factors computed by `precomp_gs_cyclic` or `precomp_gs_negacyclic`
+ * @param n size of the input
+ * @param q modulus
+ */
 static void invntt_gs(T *a, T *twiddles, size_t n, T q){
     size_t logn = log2(n);
     for(size_t i=0; i < logn; i++){
@@ -192,6 +289,19 @@ static void invntt_gs(T *a, T *twiddles, size_t n, T q){
     }
 }
 
+/**
+ * @brief Compute a polynomial multiplication by computing iNTT(NTT(a) o NTT(b))
+ *
+ * Works for both the cyclic and the negacyclic case (with the correct twiddles).
+ *
+ * @param c output polynomial (n coefficients)
+ * @param a first multiplicand polynomial (n coefficients)
+ * @param b second multiplicand polynomial (n coefficients)
+ * @param twiddlesNtt twiddles for the forward NTT (computed by `precomp_ct_cyclic` or `precomp_ct_negacyclic`)
+ * @param twiddlesInvNtt twiddles for the inverse NTT (computed by `precomp_gs_cyclic` or `precomp_gs_negacyclic`)
+ * @param n number of coefficients in a and b
+ * @param q modulus
+ */
 static void polymul_ntt_ct_gs(T *c, T *a, T *b, T *twiddlesNtt, T *twiddlesInvNtt, T n, T q){
     // NTT(a) and NTT(b)
     ntt_ct(a, twiddlesNtt, n, q);
@@ -204,6 +314,14 @@ static void polymul_ntt_ct_gs(T *c, T *a, T *b, T *twiddlesNtt, T *twiddlesInvNt
     invntt_gs(c, twiddlesInvNtt, n, q);
 }
 
+/**
+ * @brief Random test of cyclic NTT multiplication for `Zq[x]/(x^n-1)`
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_cyclic(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], a2[n], b[n];
@@ -284,6 +402,14 @@ static int testcase_cyclic(size_t n, T q, int printPoly){
     return rc;
 }
 
+/**
+ * @brief Random test of negacyclic NTT multiplication for `Zq[x]/(x^n+1)`
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_negacyclic(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], a2[n], b[n];

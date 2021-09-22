@@ -24,7 +24,7 @@ def precomp_ct_cyclic(n, root, q, numLayers):
     Parameters
     ----------
     n : int
-        size of the NTT (number of coefficients).
+        number of coefficients (not size of the NTT)
     root : int
         (2^numLayers)-th primitive root of unity modulo q.
     q : int
@@ -55,7 +55,7 @@ def precomp_basemul_cyclic(n, root, q, numLayers):
     Parameters
     ----------
     n : int
-        size of the NTT (number of coefficients).
+        number of coefficients (not size of the NTT)
     root : int
         (2^numLayers)-th primitive root of unity modulo q.
     q : int
@@ -78,14 +78,14 @@ def precomp_basemul_cyclic(n, root, q, numLayers):
 def precomp_gs_cyclic(n, root, q, numLayers):
     """Precompute the required twiddle factors for a incomplete cyclic Gentleman--Sande inverse FFT.
 
-    The twiddles correspond to the inverses of the ones computes in `precomp_ct_cyclic`.
+    The twiddles correspond to the inverses of the ones computed in `precomp_ct_cyclic`.
     Note that the twiddle factors repeat. In a real implementation one would
     not store them repeatedly.
 
     Parameters
     ----------
     n : int
-        size of the NTT (number of coefficients).
+        number of coefficients (not size of the NTT).
     root : int
         (2^numLayers)-th primitive root of unity modulo q.
     q : int
@@ -121,7 +121,7 @@ def precomp_ct_negacyclic(n, root, q, numLayers):
     Parameters
     ----------
     n : int
-        size of the NTT (number of coefficients).
+        number of coefficients (not size of the NTT)
     root : int
         2*(2^numLayers)-th primitive root of unity modulo q.
     q : int
@@ -151,7 +151,7 @@ def precomp_basemul_negacyclic(n, root, q, numLayers):
     Parameters
     ----------
     n : int
-        size of the NTT (number of coefficients).
+        number of coefficients (not size of the NTT)
     root : int
         2*(2^numLayers)-th primitive root of unity modulo q.
     q : int
@@ -175,12 +175,12 @@ def precomp_basemul_negacyclic(n, root, q, numLayers):
 def precomp_gs_negacyclic(n, root, q, numLayers):
     """Precompute the required twiddle factors for a incomplete negacyclic Gentleman--Sande inverse FFT.
 
-    The twiddles correspond to the inverses of the ones computes in `precomp_ct_negacyclic`.
+    The twiddles correspond to the inverses of the ones computed in `precomp_ct_negacyclic`.
 
     Parameters
     ----------
     n : int
-        size of the NTT (number of coefficients).
+        number of coefficients (not size of the NTT)
     root : int
         2*(2^numLayers)-th primitive root of unity modulo q.
     q : int

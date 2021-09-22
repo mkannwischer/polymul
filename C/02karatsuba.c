@@ -1,26 +1,45 @@
+/**
+ * @file 02karatsuba.c
+ * @brief Section 2.2.2: Karatsuba multiplication
+ *
+ * Illustrates (refined) two-way Karatsuba multiplication.
+ */
 #include "poly.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-// performs a Karatsuba multiplication computing the full product with 2*n-1 coeffs
-//         Works for odd n.
-//         Smaller polynomial multiplications are implemented using schoolbook.
-//         For example, for n=4.
-//         Let a0b0 = w; a1b1 = y; (a0+a1)(b0+b1)= z
-
-//         We compute:
-//           0    1    2    3    4    5    6
-//          ---- ---- ----      ---- ---- ----
-//         | w0 | w1 | w2 |    | y0 | y1 | y2 |
-//          ---- ---- ---- ---- ---- ----  ----
-//                 + | z0 | z1 | z2 |
-//                    ---- ---- ----
-//                 - | w0 | w1 | w2 |
-//                    ---- ---- ----
-//                 - | y0 | y1 | y2 |
-//                    ---- ---- ----
+/**
+ * @brief Compute polynomial product using two-way Karatsuba
+ *
+ * Assumes n is the same for both a and b.
+ * Works for odd n.
+ *
+ * Smaller polynomial multiplications are implemented using schoolbook.
+ * For example, for n=4:
+ * Let c = a0b0; d = (a0+a1)(b0+b1); e = a1b1;
+ *
+ * We compute:
+ * ```
+ *   0    1    2    3    4    5    6
+ *  ---- ---- ----      ---- ---- ----
+ * | c0 | c1 | c2 |    | e0 | e1 | e2 |
+ *  ---- ---- ---- ---- ---- ----  ----
+ *         + | d0 | d1 | d2 |
+ *            ---- ---- ----
+ *         - | c0 | c1 | c2 |
+ *            ---- ---- ----
+ *         - | e0 | e1 | e2 |
+ *            ---- ---- ----
+ * ```
+ *
+ * @param c product ab with 2n-1 coefficients
+ * @param a first multiplicand with n coefficients
+ * @param b second multiplicand with n coefficients
+ * @param n number of coefficients in a and b
+ * @param q modulus
+ */
 static void polymul_karatsuba(T* c, const T* a, const T* b, size_t n, T q){
     size_t nhalf = n>>1;
     size_t i;
@@ -74,11 +93,21 @@ static void polymul_karatsuba(T* c, const T* a, const T* b, size_t n, T q){
     }
 }
 
-// Similar as polymul_karatsuba, but the smaller polynomial multiplications
-// are also using karatsuba down to a threadhold from which we switch to
-// schoolbook.
-// Assumes n is the same for both a and b.
-
+/**
+ * @brief Compute polynomial product using recursive two-way Karatsuba down to a threshold
+ *
+ * Similar as polymul_karatsuba, but the smaller polynomial multiplications
+ * are also using karatsuba down to a threashold from which we switch to
+ * schoolbook.
+ * Assumes n is the same for both a and b.
+ *
+ * @param c product ab with 2n-1 coefficients
+ * @param a first multiplicand with n coefficients
+ * @param b second multiplicand with n coefficients
+ * @param n number of coefficients in a and b
+ * @param q modulus
+ * @param threshold if n <= threshold, switch to schoolbook.
+ */
 static void polymul_karatsuba_recursive(T* c, const T* a, const T *b,
                                         size_t n, T q, size_t threshold){
     size_t nhalf = n>>1;
@@ -140,36 +169,51 @@ static void polymul_karatsuba_recursive(T* c, const T* a, const T *b,
         c[i+nhalf] = (c[i+nhalf] + tmp[i]) % q;
     }
 }
-/*
-    The core observation of refined Karatsuba is that some additions are performed twice.
-    Consider the example with n =4.
-    Let a0b0 = w; a1b1 = y; (a0+a1)(b0+b1)= z
-    Normal Karatsuba computes:
-      0    1    2    3    4    5    6
-     ---- ---- ----      ---- ---- ----
-    | w0 | w1 | w2 |    | y0 | y1 | y2 |
-     ---- ---- ---- ---- ---- ----  ----
-            + | z0 | z1 | z2 |
-               ---- ---- ----
-            - | w0 | w1 | w2 |
-               ---- ---- ----
-            - | y0 | y1 | y2 |
-               ---- ---- ----
-    Here w2-y0 is computed twice (in column 2 and 4).
-    For larger polynomials, this duplicate computation becomes significant (n//2-1)
-    We can, thus, compute that part h once and save some additions.
-    Consequently, refined Karatsuba looks like
-      0    1    2    3    4    5    6
-     ---- ---- ----      ---- ---- ----
-    | w0 | w1 | h0 |    |-h0 | y1 | y2 |
-     ---- ---- ---- ---- ---- ----  ----
-            + | z0 | z1 | z2 |
-               ---- ---- ----
-            - | w0 | w1 |
-               ---- ---- ----
-            -      | y1 | y2 |
-                    ---- ----
-*/
+
+/**
+ * @brief Compute polynomial product using refined two-way Karatsuba.
+ *
+ * The core observation leading to refined Karatsuba is that some additions
+ * are performed twice.
+ * Consider the example with n =4.
+ * Let c = a0b0; d = (a0+a1)(b0+b1); e = a1b1;
+ *
+ * Normal Karatsuba computes:
+ * ```
+ *   0    1    2    3    4    5    6
+ *  ---- ---- ----      ---- ---- ----
+ * | c0 | c1 | c2 |    | e0 | e1 | e2 |
+ *  ---- ---- ---- ---- ---- ----  ----
+ *         + | d0 | d1 | d2 |
+ *            ---- ---- ----
+ *         - | c0 | c1 | c2 |
+ *            ---- ---- ----
+ *         - | e0 | e1 | e2 |
+ *            ---- ---- ----
+ * ```
+ * Here c2-e0 is computed twice (in column 2 and 4).
+ * For larger polynomials, this duplicate computation becomes significant (n//2-1)
+ * We can, thus, compute that part (say h) once and save some additions.
+ * Consequently, refined Karatsuba looks like
+ * ```
+ *   0    1    2    3    4    5    6
+ *  ---- ---- ----      ---- ---- ----
+ * | c0 | c1 | h0 |    |-h0 | e1 | e2 |
+ *  ---- ---- ---- ---- ---- ----  ----
+ *         + | d0 | d1 | d2 |
+ *            ---- ---- ----
+ *         - | c0 | c1 |
+ *            ---- ---- ----
+ *         -      | e1 | e2 |
+ *                 ---- ----
+ * ```
+ *
+ * @param c product ab with 2n-1 coefficients
+ * @param a first multiplicand with n coefficients
+ * @param b second multiplicand with n coefficients
+ * @param n number of coefficients in a and b
+ * @param q modulus
+ */
 static void polymul_refined_karatsuba(T* c, const T* a, const T* b, size_t n,
                                       T q){
     size_t nhalf = n>>1;
@@ -231,6 +275,14 @@ static void polymul_refined_karatsuba(T* c, const T* a, const T* b, size_t n,
     }
 }
 
+/**
+ * @brief Random test of standard two-way Kartsuba multiplication (`polymul_karatsuba`)
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_karatsuba(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], b[n];
@@ -251,7 +303,15 @@ static int testcase_karatsuba(size_t n, T q, int printPoly){
     if(poly_compare(c_ref, c, 2*n-1, q)) rc = 1;
     return rc;
 }
-
+/**
+ * @brief Random test of recursive two-way Kartsuba multiplication (`polymul_karatsuba_recursive`)
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param t threshold. If n <= threshold, switch to schoolbook.
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_karatsuba_recursive(size_t n, T q, size_t t, int printPoly){
     int rc = 0;
     T a[n], b[n];
@@ -271,7 +331,14 @@ static int testcase_karatsuba_recursive(size_t n, T q, size_t t, int printPoly){
     if(poly_compare(c_ref, c, 2*n-1, q)) rc = 1;
     return rc;
 }
-
+/**
+ * @brief Random test of refined two-way Kartsuba multiplication (`polymul_refined_karatsuba`)
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param printPoly flag for printing inputs and outputs
+ * @return int 0 if test is successful, 1 otherwise
+ */
 static int testcase_refined_karatsuba(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], b[n];

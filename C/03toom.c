@@ -1,9 +1,40 @@
+/**
+ * @file 03toom.c
+ * @brief Section 2.2.3: Toom--Cook multiplication
+ *
+ * Illustrates Toom-3, and Toom-4 multiplication for any modulus.
+ */
 #include "poly.h"
 #include "zq.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * @brief Compute polynomial product using three-way Toom--Cook multiplication
+ * Assumes n is the same for both a and b; also 3 must divide n.
+ * Sets y=x^(n/3), s.t.
+ * a = a0 + y a1 + y^2 a2
+ * b = b0 + y b1 + y^2 b2
+ *
+ * Then evaluates at y = {0, infty, 1, -1, -2}, performs 5 multiplications
+ * of degree n/3 polynomials, and interpolates c using the formulas presented
+ * in the thesis.
+ *
+ * During the interpolation, we need to divide by 2 and 3
+ * In case q is co-prime to 2 and 3, we can simply multiply by the inverse
+ *
+ * As q is often a power of two, the inverse of two does often not exist.
+ * In that case there is a workaround: We do the small multiplications
+ * modulo 2q instead of q, such that we can divide by two during the
+ * interpolation without changing the result.
+ *
+ * @param c product ab with 2n-1 coefficients
+ * @param a first multiplicand with n coefficients
+ * @param b second multiplicand with n coefficients
+ * @param n number of coefficients in a and b. needs to be divisble by 3
+ * @param q modulus. needs to be co-prime to 3
+ */
 static void polymul_toom3(T* c, const T* a, const T* b, size_t n, T q){
     if(n%3 != 0) {
         printf("ERROR: toom3 currently only supports n divisible by 3. please pad your polynomial.");
@@ -127,6 +158,30 @@ static void polymul_toom3(T* c, const T* a, const T* b, size_t n, T q){
     }
 }
 
+/**
+ * @brief Compute polynomial product using four-way Toom--Cook multiplication.
+ * Assumes n is the same for both a and b; also 4 must divide n.
+ * Sets y=x^(n/4), s.t.
+ * a = a0 + y a1 + y^2 a2 + y^3 a3
+ * b = b0 + y b1 + y^2 b2 + y^3 a3
+ *
+ * Then evaluates at y = {0, infty, 1, -1, 2, -2, 3}, performs 7 multiplications
+ * of degree n/4 polynomials, and interpolates c using the formulas presented
+ * in the thesis.
+ *
+ * During the interpolation, we need to divide by 8 and 3
+ * In case q is co-prime to 8 and 3, we can simply multiply by the inverse.
+ * As q is often a power of two, the inverse of 8 does often not exist.
+ * In that case there is a workaround: We do the small multiplications
+ * modulo 8q instead of q, such that we can divide by two during the
+ * interpolation without changing the result.
+ *
+ * @param c product ab with 2n-1 coefficients
+ * @param a first multiplicand with n coefficients
+ * @param b second multiplicand with n coefficients
+ * @param n number of coefficients in a and b. needs to be divisble by 4
+ * @param q modulus. needs to be co-prime to 3 and 5
+ */
 static void polymul_toom4(T* c, const T* a, const T* b, size_t n, T q){
     //TODO add rcs to the errors
     if(n%4 != 0) {
@@ -341,6 +396,14 @@ static void polymul_toom4(T* c, const T* a, const T* b, size_t n, T q){
     }
 }
 
+/**
+ * @brief Random test of three-way Toom--Cook multiplication (`polymul_toom3`)
+ *
+ * @param n number of coefficients of input polynomials. needs to be divisble by 3
+ * @param q modulus. needs to be co-prime to 3
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_toom3(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], b[n];
@@ -363,6 +426,14 @@ static int testcase_toom3(size_t n, T q, int printPoly){
     return rc;
 }
 
+/**
+ * @brief Random test of three-way Toom--Cook multiplication (`polymul_toom4`)
+ *
+ * @param n number of coefficients of input polynomials. needs to be divisble by 4
+ * @param q modulus needs to be co-prime to 3 and 5
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_toom4(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], b[n];

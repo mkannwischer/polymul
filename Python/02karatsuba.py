@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Section 2.2.2: Karatsuba.
+"""Section 2.2.2: Karatsuba multiplication.
 
 Illustrates (refined) two-way Karatsuba multiplication.
 """
@@ -97,6 +97,8 @@ def polymul_karatsuba_recursive(a, b, threshold):
         first multiplicand with n coefficients.
     b : Poly
         second multiplicand with n coefficients.
+    threshold : int
+        once n <= threshold, switch to schoolbook
     Returns
     ----------
     Poly

@@ -1,9 +1,27 @@
+/**
+ * @file 04ntt.c
+ * @brief Section 2.2.4: Number-theoretic transform
+ *
+ * Illustrates the cyclic and negacyclic number-theoric transform.
+ * This is a reference implementation that requires time O(n^2) for the transform.
+ * For fast implementations, see `05fft.c`
+ */
 #include "poly.h"
 #include "zq.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
+/**
+ * @brief Computes forward (2n-1) NTT of n-coefficient polynomial
+ *
+ * Computes pntt_i = sum_{j=0}^{n} p[j]*root^{ij} for 0 <= i < 2n-1
+ *
+ * @param t output polynomial (2n-1 coefficients). corresponds to a evaluated at root^0, ..., root^(2n-2), i.e., p transformed into NTT domain
+ * @param a input polynomial (n coefficients)
+ * @param q modulus
+ * @param n number of coefficients in a
+ * @param root (2n-1)-th root of unity modulo q
+ */
 static void polymul_ntt_forward(T *t, const T *a, T q, T n, T root){
     T i, j;
     T tmp;
@@ -21,6 +39,18 @@ static void polymul_ntt_forward(T *t, const T *a, T q, T n, T root){
     }
 }
 
+/**
+ * @brief Computes inverse NTT.
+ *
+ * Note that the inputs here are in NTT domain, i.e., have (2n-1) coefficients.
+ * Computes p_i =  1/n * sum_{j=0}^{2n-1} pntt[j]*root^{-ij} for 0 <= i < 2n-1
+ *
+ * @param t output polynomial (2n-1 coefficients). a transformed to normal domain
+ * @param a input polynomial (2n-1 coefficients)
+ * @param q modulus
+ * @param n original n; a has 2n-1 coefficients
+ * @param root (2n-1)-th root of unity modulo q
+ */
 static void polymul_ntt_inverse(T *t, const T *a, T q, T n, T root){
     T i, j;
     T tmp;
@@ -46,7 +76,21 @@ static void polymul_ntt_inverse(T *t, const T *a, T q, T n, T root){
 
 }
 
-
+/**
+ * @brief Performs NTT-based multiplication of two polynomials in the ring Zq[x].
+ *
+ * For computing the product we evaluate the n-coefficient polynomials and b
+ * at (2n-1) powers of a (2n-1)-th root of unity, then multply coefficient wise,
+ * and interpolate the product using the inverse NTT.
+ * Primitive (2n-1)-th root of unity modulo q needs to exist.
+ *
+ * @param c output polynomial (2n-1 coefficients)
+ * @param a first multiplicand polynomial (n coefficients)
+ * @param b second multiplicand polynomial (n coefficients)
+ * @param n number of coefficients in a and b
+ * @param q modulus
+ * @return int 1 if there is an error, 0 otherwise
+ */
 static int polymul_ntt(T *c, const T *a, const T *b, size_t n, T q){
     if(!zq_isPrime(q)){
         printf("ERROR: ntt requires prime q.\n");
@@ -78,6 +122,17 @@ static int polymul_ntt(T *c, const T *a, const T *b, size_t n, T q){
     return 0;
 }
 
+/**
+ * @brief Computes forward cyclic n-NTT of n-coefficient polynomial
+ *
+ * Computes pntt_i = sum_{j=0}^{n} p[j]*root^{ij} for 0 <= i < n
+ *
+ * @param t output polynomial (n coefficients). corresponds to a evaluated at root^0, ..., root^(n-1), i.e., p transformed into NTT domain
+ * @param a input polynomial (n coefficients)
+ * @param q modulus
+ * @param n number of coefficients in a
+ * @param root n-th root of unity modulo q
+ */
 static void polymul_cyclic_ntt_forward(T *t, const T *a, T q, T n, T root){
     T i, j;
     T tmp;
@@ -95,6 +150,17 @@ static void polymul_cyclic_ntt_forward(T *t, const T *a, T q, T n, T root){
     }
 }
 
+/**
+ * @brief Computes cyclic inverse NTT.
+ *
+ * Computes p_i =  1/n * sum_{j=0}^{n} pntt[j]*root^{-ij} for 0 <= i < n
+ *
+ * @param t output polynomial (n coefficients). a transformed to normal domain
+ * @param a input polynomial (n coefficients)
+ * @param q modulus
+ * @param n number of coefficients in a
+ * @param root n-th root of unity modulo q
+ */
 static void polymul_cyclic_ntt_inverse(T *t, const T *a, T q, T n, T root){
     T i, j;
     T tmp;
@@ -120,7 +186,21 @@ static void polymul_cyclic_ntt_inverse(T *t, const T *a, T q, T n, T root){
 
 }
 
-
+/**
+ * @brief Performs NTT-based multiplication of two polynomials in the ring Zq[x]/(x^n-1), i.e., cyclic.
+ *
+ * For computing the product we evaluate the n-coefficient polynomials and b
+ * at n powers of a n-th root of unity, then multply coefficient wise,
+ * and interpolate the product using the inverse NTT.
+ * Primitive n-th root of unity modulo q needs to exist.
+ *
+ * @param c output polynomial (n coefficients)
+ * @param a first multiplicand polynomial (n coefficients)
+ * @param b second multiplicand polynomial (n coefficients)
+ * @param n number of coefficients in a and b
+ * @param q modulus
+ * @return int 1 if there is an error, 0 otherwise
+ */
 static int polymul_cyclic_ntt(T *c, const T *a, const T *b, size_t n, T q){
     if(!zq_isPrime(q)){
         printf("ERROR: cyclic ntt requires prime q.\n");
@@ -152,6 +232,18 @@ static int polymul_cyclic_ntt(T *c, const T *a, const T *b, size_t n, T q){
     return 0;
 }
 
+/**
+ * @brief Compute forward negacyclic n-NTT of n-coefficient polynomial.
+ *
+ * Computes pntt_i = sum_{j=0}^{n} p[j]*root^{j}*root^{2ij} for 0 <= i < n.
+ * This is the same as first twisting to Zq[x]/(x^n-1) and then performing a cyclic NTT.
+ *
+ * @param t output polynomial (n coefficients)
+ * @param a input polynomial (n coefficients)
+ * @param q modulus
+ * @param n number of coefficients in a
+ * @param root 2n-th root of unity modulo q
+ */
 static void polymul_negacyclic_ntt_forward(T *t, const T *a, T q, T n, T root){
     T i, j;
     T tmp;
@@ -169,6 +261,17 @@ static void polymul_negacyclic_ntt_forward(T *t, const T *a, T q, T n, T root){
     }
 }
 
+/**
+ * @brief Computes negacyclic inverse NTT.
+ *
+ * Compute p_i =  1/n * root^{-i} * sum_{j=0}^{n} pntt[j]*root^{-2ij} for 0 <= i < n
+ *
+ * @param t output polynomial (n coefficients)
+ * @param a input polynomial (n coefficients)
+ * @param q modulus
+ * @param n number of coefficients in a
+ * @param root 2n-th root of unity modulo q
+ */
 static void polymul_negacyclic_ntt_inverse(T *t, const T *a, T q, T n, T root){
     T i, j;
     T tmp;
@@ -194,7 +297,25 @@ static void polymul_negacyclic_ntt_inverse(T *t, const T *a, T q, T n, T root){
     }
 }
 
-
+/**
+ * @brief Performs NTT-based multiplication of two polynomials in the ring Zq[x]/(x^n+1), i.e., negacyclic.
+ *
+ * For computing the product, we first twist a and b to Zq[x]/(x^n-1) by
+ * multiplying by powers of the 2n-th root of unity,
+ * then evaluate at n powers of a n-th root of unity,
+ * then multply coefficient-wise,
+ * then interpolate the product using the inverse NTT,
+ * then twist back to Zq[x]/(x^n+1) by multiplying by power of the inverse
+ * 2n-th root of unity.
+ * Primitive 2n-th (and consequently, n-th) root of unity modulo q needs to exist.
+ *
+ * @param c output polynomial (n coefficients)
+ * @param a first multiplicand polynomial (n coefficients)
+ * @param b second multiplicand polynomial (n coefficients)
+ * @param n number of coefficients in a and b
+ * @param q modulus
+ * @return int 1 if there is an error, 0 otherwise
+ */
 static int polymul_negacyclic_ntt(T *c, const T *a, const T *b, size_t n, T q){
     if(!zq_isPrime(q)){
         printf("ERROR: negacyclic ntt requires prime q.\n");
@@ -225,7 +346,14 @@ static int polymul_negacyclic_ntt(T *c, const T *a, const T *b, size_t n, T q){
     return 0;
 }
 
-
+/**
+ * @brief Random test of `polymul_ntt`
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_ntt(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], b[n];
@@ -248,6 +376,14 @@ static int testcase_ntt(size_t n, T q, int printPoly){
     return rc;
 }
 
+/**
+ * @brief Random test of `polymul_cyclic_ntt`
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_cyclic_ntt(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], b[n];
@@ -274,6 +410,14 @@ static int testcase_cyclic_ntt(size_t n, T q, int printPoly){
     return rc;
 }
 
+/**
+ * @brief Random test of `polymul_negacyclic_ntt`
+ *
+ * @param n number of coefficients of input polynomials
+ * @param q modulus
+ * @param printPoly flag for printing inputs and outputs
+ * @return int  0 if test is successful, 1 otherwise
+ */
 static int testcase_negacyclic_ntt(size_t n, T q, int printPoly){
     int rc = 0;
     T a[n], b[n];
