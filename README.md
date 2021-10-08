@@ -1,6 +1,6 @@
 This code accompanies my PhD thesis on **Polynomial Multiplication for Post-Quantum Cryptography**.
 
-If you find mistakes, parts that could use some more comments, examples that could be added, or anything else that you think should be improved, please drop me an e-mail at `<matthias@kannwischer.eu`. 
+If you find mistakes, parts that could use some more comments, examples that could be added, or anything else that you think should be improved, please drop me an e-mail at `<matthias@kannwischer.eu>`. 
 I'm also planning to extend this collection to more algorithms that others have used to implement PQC. If you have input about what should be covered, I'd be grateful for any input.
 
 **What this code tries to achieve**
