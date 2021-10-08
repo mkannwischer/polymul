@@ -1,8 +1,7 @@
 This code accompanies my PhD thesis on **Polynomial Multiplication for Post-Quantum Cryptography**.
 
-
-The documentation is still very incomplete ... I know... also comments in files need more work, but is should be functional.
-I will add the documentation in the next few weeks.
+If you find mistakes, parts that could use some more comments, examples that could be added, or anything else that you think should be improved, please drop me an e-mail at `<matthias@kannwischer.eu`. 
+I'm also planning to extend this collection to more algorithms that others have used to implement PQC. If you have input about what should be covered, I'd be grateful for any input.
 
 **What this code tries to achieve**
 
@@ -29,3 +28,6 @@ I will add the documentation in the next few weeks.
 | 2.2.8 Good's trick   | [08goods.py](./Python/08goods.py)          | [08goods.c](./C/08goods.c)          |
 
 Note that the NTT implementations do modular reductions using `% q`. A real implementation would not do that since it is both slow and potentially vulnerable to timing attacks. In a real implementation one would use Montgomery or Barrett reductions. This also affects the twiddle factors as those need to be transformed to Montgomery domain before. 
+
+For more details on the general framework, see [Python/README.md](./Python/README.md) and [C/README.md](./C/README.md]
+
