@@ -276,7 +276,7 @@ static void polymul_refined_karatsuba(T* c, const T* a, const T* b, size_t n,
 }
 
 /**
- * @brief Random test of standard two-way Kartsuba multiplication (`polymul_karatsuba`)
+ * @brief Random test of standard two-way Karatsuba multiplication (`polymul_karatsuba`)
  *
  * @param n number of coefficients of input polynomials
  * @param q modulus
@@ -304,7 +304,7 @@ static int testcase_karatsuba(size_t n, T q, int printPoly){
     return rc;
 }
 /**
- * @brief Random test of recursive two-way Kartsuba multiplication (`polymul_karatsuba_recursive`)
+ * @brief Random test of recursive two-way Karatsuba multiplication (`polymul_karatsuba_recursive`)
  *
  * @param n number of coefficients of input polynomials
  * @param q modulus
@@ -332,7 +332,7 @@ static int testcase_karatsuba_recursive(size_t n, T q, size_t t, int printPoly){
     return rc;
 }
 /**
- * @brief Random test of refined two-way Kartsuba multiplication (`polymul_refined_karatsuba`)
+ * @brief Random test of refined two-way Karatsuba multiplication (`polymul_refined_karatsuba`)
  *
  * @param n number of coefficients of input polynomials
  * @param q modulus

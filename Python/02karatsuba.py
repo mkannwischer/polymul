@@ -259,7 +259,7 @@ def polymul_refined_karatsuba(a, b):
 
 
 def testcase_karatsuba(n, q, printPoly=True):
-    """Random test of standard two-way Kartsuba multiplication (`polymul_karatsuba`).
+    """Random test of standard two-way Karatsuba multiplication (`polymul_karatsuba`).
 
     Parameters
     ----------
@@ -293,7 +293,7 @@ def testcase_karatsuba(n, q, printPoly=True):
        return 1
 
 def testcase_karatsuba_recursive(n, q, t, printPoly=True):
-    """Random test of recursive two-way Kartsuba multiplication (`polymul_karatsuba_recursive`).
+    """Random test of recursive two-way Karatsuba multiplication (`polymul_karatsuba_recursive`).
 
     Parameters
     ----------
@@ -329,7 +329,7 @@ def testcase_karatsuba_recursive(n, q, t, printPoly=True):
        return 1
 
 def testcase_refined_karatsuba(n, q, printPoly=True):
-    """Random test of refined two-way Kartsuba multiplication (`polymul_refined_karatsuba`).
+    """Random test of refined two-way Karatsuba multiplication (`polymul_refined_karatsuba`).
 
     Parameters
     ----------

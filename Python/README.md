@@ -46,7 +46,7 @@ c = a.pointwise(b)  # coefficient-wise multiplication
 # Common helper function
 
 We implement a couple of common helper functions in [common.py](./common.py).
-Most of them are required for the Number-Theoretic Transforms.
+Most of them are required for the number-theoretic transforms.
 
 Here is a list with brief descriptions. For more details see the documentation in [common.py](./common.py).
 ```

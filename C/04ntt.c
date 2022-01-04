@@ -2,7 +2,7 @@
  * @file 04ntt.c
  * @brief Section 2.2.4: Number-theoretic transform
  *
- * Illustrates the cyclic and negacyclic number-theoric transform.
+ * Illustrates the cyclic and negacyclic number-theoretic transform.
  * This is a reference implementation that requires time O(n^2) for the transform.
  * For fast implementations, see `05fft.c`
  */
@@ -80,7 +80,7 @@ static void polymul_ntt_inverse(T *t, const T *a, T q, T n, T root){
  * @brief Performs NTT-based multiplication of two polynomials in the ring Zq[x].
  *
  * For computing the product we evaluate the n-coefficient polynomials and b
- * at (2n-1) powers of a (2n-1)-th root of unity, then multply coefficient wise,
+ * at (2n-1) powers of a (2n-1)-th root of unity, then multiply coefficient wise,
  * and interpolate the product using the inverse NTT.
  * Primitive (2n-1)-th root of unity modulo q needs to exist.
  *
@@ -190,7 +190,7 @@ static void polymul_cyclic_ntt_inverse(T *t, const T *a, T q, T n, T root){
  * @brief Performs NTT-based multiplication of two polynomials in the ring Zq[x]/(x^n-1), i.e., cyclic.
  *
  * For computing the product we evaluate the n-coefficient polynomials and b
- * at n powers of a n-th root of unity, then multply coefficient wise,
+ * at n powers of a n-th root of unity, then multiply coefficient wise,
  * and interpolate the product using the inverse NTT.
  * Primitive n-th root of unity modulo q needs to exist.
  *
@@ -303,7 +303,7 @@ static void polymul_negacyclic_ntt_inverse(T *t, const T *a, T q, T n, T root){
  * For computing the product, we first twist a and b to Zq[x]/(x^n-1) by
  * multiplying by powers of the 2n-th root of unity,
  * then evaluate at n powers of a n-th root of unity,
- * then multply coefficient-wise,
+ * then multiply coefficient-wise,
  * then interpolate the product using the inverse NTT,
  * then twist back to Zq[x]/(x^n+1) by multiplying by power of the inverse
  * 2n-th root of unity.

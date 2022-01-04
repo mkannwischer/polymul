@@ -55,7 +55,7 @@ class Poly:
             raise NotImplementedError()
 
     def __rmul__(self, factor):
-        """Multply a polynomial by an integer."""
+        """multiply a polynomial by an integer."""
         return self*factor
 
     def __eq__(self, other):
