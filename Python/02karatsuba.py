@@ -225,7 +225,8 @@ def polymul_refined_karatsuba(a, b):
     # compute a*b = Y^2 a_1 b_1 + Y t + a_0 b_0
     c = Poly.zero(2*n-1, q)
 
-    # in a real implementation, the copying can be mostly eliminated by using pointer magic.
+    # in a real implementation, the copying can be mostly eliminated by using
+    # pointer magic.
     # copy lower part of a0b0
     for i in range(nhalf):
         c.coeffs[i] = a0b0.coeffs[i]

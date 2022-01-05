@@ -19,8 +19,8 @@ def polymul_toom3(a, b):
     of degree n/3 polynomials, and interpolates c using the formulas presented
     in the thesis.
 
-    During the interpolation, we need to divide by 2 and 3
-    In case q is co-prime to 2 and 3, we can simply multiply by the inverse
+    During the interpolation, we need to divide by 2 and 3.
+    In case q is co-prime to 2 and 3, we can simply multiply by the inverse.
 
     As q is often a power of two, the inverse of two does often not exist.
     In that case there is a workaround: We do the small multiplications
@@ -99,8 +99,8 @@ def polymul_toom3(a, b):
         v2 = v2 + v1 - c_inf                #       v2
         v1 = v1 - v3                        #  v1
     else:
-        # otherwise, we divide by two (in which case the small multiplications need
-        # to be correct mod 2*q)
+        # otherwise, we divide by two (in which case the small multiplications
+        # need to be correct mod 2*q)
         v3 = (c_m2 - c_1) * inv3            # -v1 + v2 - 3v3 + 5c_inf
         v1 = (c_1 - c_m1) >> 1              #  v1      +  v3
         v2 = c_m1 - c_0                     # -v1 + v2 -  v3 +  c_inf
