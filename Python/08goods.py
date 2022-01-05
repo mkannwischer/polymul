@@ -16,7 +16,7 @@ def goodsPermutation(p, p0, p1, q):
     setting x = yz.
     Under the hood this converts a p0p1-coefficient polynomial into p1 polynomials
     of p0 coefficients. A coefficient with index i, will be permuted into
-    the (i % p0)-th coeffcieint of the (i % p1)-th polynomial.
+    the (i % p0)-th coefficient of the (i % p1)-th polynomial.
 
     Parameters
     ----------
